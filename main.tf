@@ -1,7 +1,7 @@
 resource "aws_wafv2_web_acl" "rules" {
   provider = aws.us-east-1
   name     = var.acl_name
-  scope    = "CLOUDFRONT"
+  scope    = var.scope
   default_action {
     allow {}
   }
