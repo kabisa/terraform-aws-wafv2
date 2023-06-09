@@ -60,8 +60,7 @@ resource "aws_wafv2_web_acl" "rules" {
         field_to_match {
           body {}
         }
-        //Equal to the Default WAF inspection size.
-        size = 16384
+        size = var.http_body_max_size
         text_transformation {
           type     = "NONE"
           priority = 10
