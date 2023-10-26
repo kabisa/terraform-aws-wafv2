@@ -115,3 +115,44 @@ resource "aws_wafv2_web_acl" "rules" {
     }
   }
 }
+
+resource "aws_cloudwatch_log_group" "rules" {
+  name = "aws-waf-logs-rules-${var.acl_name}"
+}
+
+resource "aws_wafv2_web_acl_logging_configuration" "rules" {
+  resource_arn            = aws_wafv2_web_acl.rules.arn
+  log_destination_configs = [aws_cloudwatch_log_group.rules.arn]
+}
+
+resource "aws_cloudwatch_log_resource_policy" "rules" {
+  policy_document = data.aws_iam_policy_document.rules.json
+  policy_name     = "webacl-policy-${var.acl_name}"
+}
+
+data "aws_iam_policy_document" "rules" {
+  version = "2012-10-17"
+  statement {
+    effect = "Allow"
+    principals {
+      identifiers = ["delivery.logs.amazonaws.com"]
+      type        = "Service"
+    }
+    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = ["${aws_cloudwatch_log_group.rules.arn}:*"]
+    condition {
+      test     = "ArnLike"
+      values   = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
+      variable = "aws:SourceArn"
+    }
+    condition {
+      test     = "StringEquals"
+      values   = [tostring(data.aws_caller_identity.current.account_id)]
+      variable = "aws:SourceAccount"
+    }
+  }
+}
+
+data "aws_region" "current" {}
+
+data "aws_caller_identity" "current" {}
